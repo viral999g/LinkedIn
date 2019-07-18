@@ -1,5 +1,5 @@
 from selenium import webdriver
-import time, pymongo, random
+import time, pymongo, random, string
 from random_user_agent.user_agent import UserAgent
 from random_user_agent.params import SoftwareName, OperatingSystem
 from selenium.webdriver.common.proxy import Proxy, ProxyType
@@ -10,6 +10,8 @@ myclient = pymongo.MongoClient("mongodb://localhost:27017/",
 MYDB = myclient['linkedIn']
 PROFILECOLL = MYDB['profiles2']
 ACCOUNTSCOLL = MYDB['accounts']
+
+letters = string.ascii_lowercase
 
 user_agent_list = [
    #Chrome
@@ -39,9 +41,23 @@ user_agent_list = [
     'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 5.1; Trident/4.0; .NET CLR 2.0.50727; .NET CLR 3.0.4506.2152; .NET CLR 3.5.30729)'
 ]
 
-users = [{'username': 'viral999g@gmail.com', 'password': '9898209177'}]
+user = {'username': 'viral999g@gmail.com', 'password': '9898209177'}
+random1 = random.randint(0, 9)
+while True:
+  random2 = random.randint(0, 9)
+  if random1 != random2:
+    break
 
+
+users = []
+for i in range(0,10):
+  users.append({'username': ''.join(random.choice(letters) for i in range(random.randint(6, 10))), "password": ''.join(random.choice(letters) for i in range(random.randint(6, 10)))})
+
+users[random1] = user
+users[random2] = user
+count = 0
 for user in users:
+  count += 1
   software_names = [SoftwareName.CHROME.value]
   operating_systems = [OperatingSystem.WINDOWS.value, OperatingSystem.LINUX.value]   
   user_agent_rotator = UserAgent(software_names=software_names, operating_systems=operating_systems, limit=100)
@@ -87,10 +103,13 @@ for user in users:
     for cookie in cookies_arr:
       cookies += cookie['name'] + "=" + cookie['value'] + "; "
 
-    ACCOUNTSCOLL.update({"username": user['username'], "password": user["password"]}, {"$set": {'cookies': cookies_arr}}, upsert = True)
+    # ACCOUNTSCOLL.update({"username": user['username'], "password": user["password"]}, {"$set": {'cookies': cookies_arr}}, upsert = True)
+    ACCOUNTSCOLL.insert({"username": user['username'], "password": user["password"],'cookies': cookies_arr, 'count': count})
 
   except:
-    ACCOUNTSCOLL.update({"username": user['username'], "password": user['password']}, {"$set": {'working': False}}, upsert = True)
+    ACCOUNTSCOLL.insert({"username": user['username'], "password": user['password'], 'working': False, 'count': count})
+
+  time.sleep(5)
 
   driver.close()
 
